@@ -1,5 +1,5 @@
 ---
-name: pr-reviewer
+name: orchestrator
 description: Comprehensive PR review orchestrator. Coordinates multi-dimensional code review covering quality, security, tests, and performance. Can also apply fixes and push changes. Invoke for a full pull request analysis before merge.
 tools: Read, Write, Grep, Glob, Bash, Agent
 model: inherit
@@ -77,24 +77,18 @@ Store the detected platform — it determines how the review is posted in Step 5
 
 Before doing any analysis, post an immediate comment to let the PR author know the review has started. This avoids confusion from the silence while sub-agents run.
 
-**GitHub:** Use `gh pr comment` — see `providers/github.md`. Resolve the PR number with `gh` only if it was not passed as an argument (analysis already used git in Step 3).
+Use the platform-appropriate method:
+- **GitHub:** `gh pr comment` — see `providers/github.md`
+- **Azure DevOps:** REST API — see `providers/azure-devops.md` (Posting the Starting Comment section)
+- **Generic / unknown platform:** Skip — no API available
 
-**Azure DevOps:** Use `curl` to post an initial comment thread before any analysis:
-```bash
-curl -s -u ":${AZURE_DEVOPS_TOKEN}" \
-  -X POST \
-  -H "Content-Type: application/json" \
-  "https://dev.azure.com/${AZURE_ORG}/${AZURE_PROJECT}/_apis/git/repositories/${AZURE_REPO}/pullrequests/${PR_ID}/threads?api-version=7.1" \
-  -d '{"comments":[{"content":"🔍 **PR review in progress**\n\nI'\''m running a comprehensive review covering code quality, security, test coverage, and performance. The full results will be posted as a review comment when complete — this may take a few minutes.","commentType":1}],"status":"active"}'
-```
-
-**Generic / unknown platform:** Skip — there is no API available.
+Resolve the PR number with `gh` only if it was not passed as an argument.
 
 If posting the starting comment fails, output a single warning line and continue — do not stop the review.
 
 ### 3. Gather PR Context
 
-Use **git** for every hosting platform (**GitHub, Azure DevOps, Bitbucket, generic**). Same commands keep behavior consistent and avoid needing platform CLIs for read/analysis.
+Use **git** for every hosting platform. Same commands keep behavior consistent and avoid needing platform CLIs for read/analysis.
 
 ```bash
 # Determine the base branch (default to main, fall back to master)
@@ -148,82 +142,9 @@ Pass the git-fetched file list and patches to each sub-agent so they don't need 
 
 ### 6. Compile Final Report
 
-Aggregate all findings into a structured review report:
+Aggregate all findings into the structured report format defined in `styles/report-template.md`. Read that file and follow its template exactly.
 
----
-
-## PR Review Report
-
-**PR:** [title or branch name]
-**Author:** [author]
-**Files Changed:** [count] | **+[additions]** / **-[deletions]**
-**Verdict:** `APPROVE` | `REQUEST CHANGES` | `NEEDS DISCUSSION`
-
----
-
-### Summary
-[2-3 sentence overall assessment of the change]
-
----
-
-### Critical Issues (Must Fix)
-> Blocking issues that must be resolved before merge
-
-- [ ] `path/to/file.<ext>:42` — [Issue description]
-  ```
-  // Current (problematic)
-  [problematic code in the language of the PR]
-
-  // Fix
-  [corrected code in the language of the PR]
-  ```
-
-*(If none: "No critical issues found.")*
-
----
-
-### Warnings (Should Fix)
-> Non-blocking but important — strongly recommended before merge
-
-- [ ] `path/to/file.<ext>:87` — [Issue description with suggested fix]
-
-*(If none: "No warnings found.")*
-
----
-
-### Suggestions (Consider Improving)
-> Nice-to-have improvements — address in follow-up if not now
-
-- [ ] `path/to/file.<ext>:120` — [Suggestion]
-
----
-
-### Review Details
-
-#### Code Quality
-[Summary from code-reviewer: naming, structure, duplication, error handling]
-
-#### Security
-[Summary from security-reviewer: vulnerabilities found, severity, fixes]
-
-#### Test Coverage
-[Summary from test-reviewer: coverage %, missing tests, test quality issues]
-
-#### Performance
-[Summary from performance-reviewer: bottlenecks, complexity concerns]
-
----
-
-### Files Reviewed
-| File | Lines Changed | Risk | Notes |
-|------|---------------|------|-------|
-| `src/auth/login.<ext>` | +45/-12 | 🔴 High | Auth logic modified |
-| `src/utils/format.<ext>` | +8/-3 | 🟢 Low | Utility function |
-
----
-
-## Important Guidelines
-
+**Guidelines:**
 - Reference specific file paths and line numbers for every finding
 - Include both the problematic code snippet and a concrete fix example
 - Do not flag non-issues — only real problems and genuine improvements
@@ -267,17 +188,10 @@ Use the platform-appropriate method from the Posting the Review section below wi
 
 After compiling the report (and applying fixes if in fix mode), post it to the platform detected in Step 1 immediately without waiting for user input.
 
-### GitHub
-
-Read and follow the instructions in `providers/github.md`.
-
-### Azure DevOps
-
-Read and follow the instructions in `providers/azure-devops.md`.
-
-### Bitbucket or Unknown Platform
-
-Read and follow the instructions in `providers/generic.md`.
+Read and follow the instructions in the appropriate provider file:
+- **GitHub** → `providers/github.md`
+- **Azure DevOps** → `providers/azure-devops.md`
+- **Bitbucket or Unknown Platform** → `providers/generic.md`
 
 After posting, output a single confirmation line:
 

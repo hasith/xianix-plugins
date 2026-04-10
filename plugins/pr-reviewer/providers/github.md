@@ -4,7 +4,7 @@ Use this provider when `git remote get-url origin` contains `github.com`.
 
 ## How this fits with the rest of the plugin
 
-- **Reading / analysis** — Use **git** against your base branch (same as Azure DevOps and other hosts): `git diff`, `git log`, etc. See the main orchestrator Step 3 in `agents/pr-reviewer.md`. No `gh` needed to fetch patches or file lists.
+- **Reading / analysis** — Use **git** against your base branch (same as Azure DevOps and other hosts): `git diff`, `git log`, etc. See the main orchestrator Step 3 in `agents/orchestrator.md`. No `gh` needed to fetch patches or file lists.
 - **GitHub-specific** — Use **`gh`** only to resolve the PR number when it was not passed in, and to **post** comments and reviews to GitHub.
 
 ## Prerequisites for posting

@@ -8,7 +8,7 @@ Run a comprehensive pull request review for $ARGUMENTS.
 
 ## What This Does
 
-This command invokes the **pr-reviewer** agent which orchestrates four specialized reviewers:
+This command invokes the **orchestrator** agent which coordinates four specialized reviewers in parallel:
 
 | Reviewer | Focus |
 |----------|-------|
@@ -33,54 +33,19 @@ The plugin auto-detects the hosting platform from your git remote URL:
 | Remote URL contains | Platform | How review is posted |
 |---|---|---|
 | `github.com` | GitHub | GitHub CLI (`gh`) |
-| `dev.azure.com` / `visualstudio.com` | Azure DevOps | `az repos pr` CLI |
+| `dev.azure.com` / `visualstudio.com` | Azure DevOps | REST API (`curl`) |
 | Anything else | Generic | Written to `pr-review-report.md` |
-
-**Analysis** uses standard **git** commands for every host (including GitHub and Azure DevOps). **`gh`** (GitHub) and **Azure DevOps tools/REST** are used only where the platform requires them — mainly **posting** the review and resolving the PR id on GitHub.
 
 ## Output
 
-The review produces a structured report:
-
-```
-## PR Review Report
-Verdict: APPROVE | REQUEST CHANGES | NEEDS DISCUSSION
-
-### Critical Issues (Must Fix)
-### Warnings (Should Fix)
-### Suggestions (Consider Improving)
-### Code Quality
-### Security
-### Test Coverage
-### Performance
-### Files Reviewed
-```
-
-## After the Review
-
-The review is posted to your platform automatically as part of this command — no further steps required. The agent will output a single confirmation line:
-
-**GitHub:**
-```
-Review posted on PR #<number>: <verdict> — <N> inline comments — <URL>
-```
-
-**Azure DevOps:**
-```
-Review posted on PR #<number>: <verdict> — <N> inline comments — <URL>
-```
-
-**Generic / unknown platform:**
-```
-Review complete: <verdict> — report written to pr-review-report.md
-```
+The review produces a structured report with verdict (`APPROVE`, `REQUEST CHANGES`, or `NEEDS DISCUSSION`), critical issues, warnings, suggestions, and per-category summaries. See `styles/report-template.md` for the full format.
 
 ## Prerequisites
 
 - Must be run inside a git repository
 - The current branch must have at least one commit ahead of the base branch
-- **GitHub**: `gh` CLI installed and authenticated **for posting** to GitHub (see `docs/platform-setup.md`); git suffices for local diff/analysis
-- **Azure DevOps**: `az` CLI installed with `azure-devops` extension and authenticated (see `docs/platform-setup.md`)
+- **GitHub**: `gh` CLI installed and authenticated (see `docs/platform-setup.md`)
+- **Azure DevOps**: `AZURE_DEVOPS_TOKEN` environment variable set (see `docs/platform-setup.md`)
 - **Fix mode**: `GIT_TOKEN` (GitHub) or `AZURE_DEVOPS_TOKEN` (Azure DevOps) must be set for `git push`
 
 ---
