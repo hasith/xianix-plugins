@@ -108,11 +108,13 @@ Post each aspect as its own work item comment. Each comment must have a clear he
 
 ### Posting each comment
 
+Azure DevOps must be told that comment bodies are Markdown. If you omit `format=markdown`, the API stores the text as plain content and the UI shows `##`, tables, and emphasis as raw characters.
+
 ```bash
 curl -s -u ":${AZURE_DEVOPS_TOKEN}" \
   -X POST \
   -H "Content-Type: application/json" \
-  "https://dev.azure.com/${AZURE_ORG}/${AZURE_PROJECT}/_apis/wit/workitems/${WORK_ITEM_ID}/comments?api-version=7.1-preview.4" \
+  "https://dev.azure.com/${AZURE_ORG}/${AZURE_PROJECT}/_apis/wit/workitems/${WORK_ITEM_ID}/comments?format=markdown&api-version=7.1-preview.4" \
   -d "$(python3 -c "
 import json, sys
 body = sys.stdin.read()

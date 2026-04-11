@@ -63,6 +63,20 @@ Store the result as `PR_ID`. If empty, the branch has no open PR — output a wa
 
 ---
 
+## Markdown in PR threads
+
+This plugin posts via the **Git** [Pull Request Threads](https://learn.microsoft.com/en-us/rest/api/azure/devops/git/pull-request-threads/create?view=azure-devops-rest-7.1) API (`.../pullrequests/.../threads`). That is **not** the same as Work Item Tracking discussion comments (`.../wit/workitems/.../comments`), which use `?format=markdown` on the request URL (see **req-analyst** `providers/azure-devops.md`).
+
+For PR threads, put Markdown in `comments[].content`. Also set thread **`properties`** so the web UI treats the thread as Markdown-capable (otherwise headings, tables, and emphasis can appear as raw text):
+
+| Key | Value |
+|---|---|
+| `Microsoft.TeamFoundation.Discussion.SupportsMarkdown` | `1` (integer) |
+
+Include the same `properties` object on **every** `POST .../threads` body below (starting comment, full report, and inline threads).
+
+---
+
 ## Posting the Starting Comment
 
 Before running any analysis, post a plain PR comment thread to inform the author that a review is underway. This fires as the very first action on Azure DevOps, before sub-agents are launched.
@@ -74,7 +88,7 @@ curl -s -u ":${AZURE_DEVOPS_TOKEN}" \
   -X POST \
   -H "Content-Type: application/json" \
   "https://dev.azure.com/${AZURE_ORG}/${AZURE_PROJECT}/_apis/git/repositories/${AZURE_REPO}/pullrequests/${PR_ID}/threads?api-version=7.1" \
-  -d '{"comments":[{"content":"🔍 **PR review in progress**\n\nI'\''m running a comprehensive review covering code quality, security, test coverage, and performance. The full results will be posted as a review comment when complete — this may take a few minutes.","commentType":1}],"status":"active"}'
+  -d '{"comments":[{"content":"🔍 **PR review in progress**\n\nI'\''m running a comprehensive review covering code quality, security, test coverage, and performance. The full results will be posted as a review comment when complete — this may take a few minutes.","commentType":1}],"status":"active","properties":{"Microsoft.TeamFoundation.Discussion.SupportsMarkdown":1}}'
 ```
 
 If posting the starting comment fails, output a single warning line and continue — do not stop the review.
@@ -115,7 +129,8 @@ import json, sys
 body = sys.stdin.read()
 print(json.dumps({
   'comments': [{'content': body, 'commentType': 1}],
-  'status': 'active'
+  'status': 'active',
+  'properties': {'Microsoft.TeamFoundation.Discussion.SupportsMarkdown': 1}
 }))
 " <<'REPORT'
 ${REPORT_BODY}
@@ -137,6 +152,7 @@ import json
 print(json.dumps({
   'comments': [{'content': '${FINDING_BODY}', 'commentType': 1}],
   'status': 'active',
+  'properties': {'Microsoft.TeamFoundation.Discussion.SupportsMarkdown': 1},
   'threadContext': {
     'filePath': '/${FILE_PATH}',
     'rightFileStart': {'line': ${LINE_NUMBER}, 'offset': 1},

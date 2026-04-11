@@ -81,4 +81,4 @@ Do not ask for confirmation at any point. Execute all steps autonomously and pro
 
    If any step fails, output the error and stop — do not retry or ask for input.
 
-> **Note:** GitHub posting requires the **`gh` CLI** installed and authenticated. Azure DevOps posting uses `curl` with the `AZURE_DEVOPS_TOKEN` environment variable (PAT with Pull Request Threads Read & Write scope). See `docs/platform-setup.md` for setup instructions.
+> **Note:** GitHub posting requires the **`gh` CLI** installed and authenticated. Azure DevOps posting uses `curl` with the `AZURE_DEVOPS_TOKEN` environment variable (PAT with Pull Request Threads Read & Write scope). See `docs/platform-setup.md` for setup instructions. On Azure DevOps, follow `providers/azure-devops.md` exactly — including thread `properties` so Markdown in PR comments renders (this differs from Work Item comments, which use `?format=markdown` on a different API).

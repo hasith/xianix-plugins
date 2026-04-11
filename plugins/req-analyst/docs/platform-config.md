@@ -84,7 +84,7 @@ export AZURE_DEVOPS_TOKEN=<your-pat>
 |---|---|
 | `GET _apis/wit/workitems/{id}` | Fetch work item details (title, description, tags, comments) |
 | `POST _apis/wit/wiql` | Query related work items in the same iteration |
-| `POST _apis/wit/workitems/{id}/comments` | Post each analysis aspect as a comment |
+| `POST _apis/wit/workitems/{id}/comments?format=markdown` | Post each analysis aspect as a comment (Markdown rendered in the UI) |
 | `PATCH _apis/wit/workitems/{id}` | Apply verdict tag |
 
 See `providers/azure-devops.md` for full API details.
