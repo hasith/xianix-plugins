@@ -36,9 +36,9 @@ Do not ask for confirmation at any point. Execute all steps autonomously and pro
    **Azure DevOps:**
    ```bash
    curl -s -u ":${AZURE_DEVOPS_TOKEN}" \
-     "https://dev.azure.com/${AZURE_ORG}/${AZURE_PROJECT}/_apis/git/repositories/${AZURE_REPO}/pullrequests/${PR_NUMBER}?api-version=7.1"
+     "${API_BASE}/_apis/git/repositories/${AZURE_REPO}/pullrequests/${PR_NUMBER}?api-version=7.1"
    ```
-   Parse org, project, repo from `git remote get-url origin` as described in `providers/azure-devops.md`.
+   Parse org, project, repo, and `API_BASE` from `git remote get-url origin` as described in `providers/azure-devops.md`.
 
    If the PR does not exist or is already completed/abandoned, stop and output a single error line — do not ask the user what to do.
 
@@ -71,7 +71,7 @@ Do not ask for confirmation at any point. Execute all steps autonomously and pro
 
    **Azure DevOps:**
    ```
-   Posted review on PR #<number>: <verdict> — <N> inline comments — https://dev.azure.com/<org>/<project>/_git/<repo>/pullrequest/<number>
+   Posted review on PR #<number>: <verdict> — <N> inline comments — ${API_BASE}/_git/<repo>/pullrequest/<number>
    ```
 
    **Generic:**

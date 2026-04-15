@@ -45,6 +45,20 @@ AZURE_PROJECT=$(echo "$REMOTE" | cut -d'/' -f4)
 AZURE_REPO=$(echo "$REMOTE"  | sed 's|.*/_git/||' | sed 's|\.git$||')
 ```
 
+### API Base URL
+
+After parsing, set the API base URL to match the remote URL format. Organizations on legacy `visualstudio.com` hosts may not resolve via the `dev.azure.com` endpoint, so the base must reflect the actual host:
+
+```bash
+if [[ "$REMOTE" =~ \.visualstudio\.com ]]; then
+  API_BASE="https://${AZURE_ORG}.visualstudio.com/${AZURE_PROJECT}"
+else
+  API_BASE="https://dev.azure.com/${AZURE_ORG}/${AZURE_PROJECT}"
+fi
+```
+
+Use `${API_BASE}` in place of a hardcoded host for **every** API call below.
+
 ---
 
 ## Resolving the PR Number
@@ -55,7 +69,7 @@ If no PR number was passed as an argument, find the active PR for the current br
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
 curl -s -u ":${AZURE_DEVOPS_TOKEN}" \
-  "https://dev.azure.com/${AZURE_ORG}/${AZURE_PROJECT}/_apis/git/repositories/${AZURE_REPO}/pullrequests?searchCriteria.sourceRefName=refs/heads/${BRANCH}&searchCriteria.status=active&api-version=7.1" \
+  "${API_BASE}/_apis/git/repositories/${AZURE_REPO}/pullrequests?searchCriteria.sourceRefName=refs/heads/${BRANCH}&searchCriteria.status=active&api-version=7.1" \
   | python3 -c "import sys,json; prs=json.load(sys.stdin)['value']; print(prs[0]['pullRequestId'] if prs else '')"
 ```
 
@@ -87,7 +101,7 @@ Parse the remote URL first (see **Parsing the Remote URL** above), then call:
 curl -s -u ":${AZURE_DEVOPS_TOKEN}" \
   -X POST \
   -H "Content-Type: application/json" \
-  "https://dev.azure.com/${AZURE_ORG}/${AZURE_PROJECT}/_apis/git/repositories/${AZURE_REPO}/pullrequests/${PR_ID}/threads?api-version=7.1" \
+  "${API_BASE}/_apis/git/repositories/${AZURE_REPO}/pullrequests/${PR_ID}/threads?api-version=7.1" \
   -d '{"comments":[{"content":"🔍 **PR review in progress**\n\nI'\''m running a comprehensive review covering code quality, security, test coverage, and performance. The full results will be posted as a review comment when complete — this may take a few minutes.","commentType":1}],"status":"active","properties":{"Microsoft.TeamFoundation.Discussion.SupportsMarkdown":1}}'
 ```
 
@@ -111,7 +125,7 @@ If posting the starting comment fails, output a single warning line and continue
 curl -s -u ":${AZURE_DEVOPS_TOKEN}" \
   -X PUT \
   -H "Content-Type: application/json" \
-  "https://dev.azure.com/${AZURE_ORG}/${AZURE_PROJECT}/_apis/git/repositories/${AZURE_REPO}/pullrequests/${PR_ID}/reviewers/me?api-version=7.1" \
+  "${API_BASE}/_apis/git/repositories/${AZURE_REPO}/pullrequests/${PR_ID}/reviewers/me?api-version=7.1" \
   -d "{\"vote\": ${VOTE}}"
 ```
 
@@ -123,7 +137,7 @@ Post the compiled review report body as a new comment thread:
 curl -s -u ":${AZURE_DEVOPS_TOKEN}" \
   -X POST \
   -H "Content-Type: application/json" \
-  "https://dev.azure.com/${AZURE_ORG}/${AZURE_PROJECT}/_apis/git/repositories/${AZURE_REPO}/pullrequests/${PR_ID}/threads?api-version=7.1" \
+  "${API_BASE}/_apis/git/repositories/${AZURE_REPO}/pullrequests/${PR_ID}/threads?api-version=7.1" \
   -d "$(python3 -c "
 import json, sys
 body = sys.stdin.read()
@@ -146,7 +160,7 @@ For each finding with a precise file path and line number:
 curl -s -u ":${AZURE_DEVOPS_TOKEN}" \
   -X POST \
   -H "Content-Type: application/json" \
-  "https://dev.azure.com/${AZURE_ORG}/${AZURE_PROJECT}/_apis/git/repositories/${AZURE_REPO}/pullrequests/${PR_ID}/threads?api-version=7.1" \
+  "${API_BASE}/_apis/git/repositories/${AZURE_REPO}/pullrequests/${PR_ID}/threads?api-version=7.1" \
   -d "$(python3 -c "
 import json
 print(json.dumps({
@@ -171,5 +185,5 @@ Post all inline comments without pausing between them.
 On completion:
 
 ```
-Review posted on PR #<id>: <verdict> — <N> inline comments — https://dev.azure.com/<org>/<project>/_git/<repo>/pullrequest/<id>
+Review posted on PR #<id>: <verdict> — <N> inline comments — ${API_BASE}/_git/<repo>/pullrequest/<id>
 ```
