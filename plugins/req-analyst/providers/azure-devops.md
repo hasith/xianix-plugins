@@ -89,22 +89,23 @@ curl -s -u ":${AZURE_DEVOPS_TOKEN}" \
 
 ## Posting the Elaboration
 
-The original work item description is **never modified**. All analysis is posted as **separate comments** — one per aspect.
+The original work item description is **never modified**. All elaboration is posted as **separate comments** — one per lens.
 
 ### Comment Order
 
-Post each aspect as its own work item comment. Each comment must have a clear heading.
+Post each lens as its own work item comment. Each comment must have a clear heading.
 
 | # | Comment | Heading | Source |
 |---|---------|---------|--------|
-| 1 | Summary & Verdict | `## 📋 Elaboration Summary` | Orchestrator (compiled) |
-| 2 | Intent & User Context | `## 🔍 Intent & User Context` | intent-analyst |
-| 3 | User Journey | `## 🗺️ User Journey` | journey-mapper |
-| 4 | Personas | `## 👥 Personas` | persona-analyst |
-| 5 | Domain Context | `## 🏢 Domain Context` | domain-analyst |
-| 6 | Gaps, Risks & Dependencies | `## ⚠️ Gaps, Risks & Dependencies` | gap-risk-analyst |
+| 1 | Elaboration Summary | `## 📋 Elaboration Summary` | Orchestrator (compiled) |
+| 2 | Fit with Existing Requirements | `## 🧩 Fit with Existing Requirements` | Orchestrator (from doc indexing in Step 2) |
+| 3 | Intent & User Context | `## 🔍 Intent & User Context` | intent-analyst |
+| 4 | User Journey | `## 🗺️ User Journey` | journey-mapper |
+| 5 | Personas & Adoption | `## 👥 Personas & Adoption` | persona-analyst |
+| 6 | Domain & Competitive Context | `## 🏢 Domain & Competitive Context` | domain-analyst |
+| 7 | Open Questions & Gaps | `## ❓ Open Questions & Gaps` | gap-risk-analyst |
 
-**Skip** comments 3 and 4 if the sub-agent found nothing relevant.
+**Skip** any comment whose source produced no meaningful findings (e.g. a narrow bug fix may not need Journey, Personas, or Fit).
 
 ### Posting each comment
 
@@ -125,16 +126,16 @@ COMMENT
 )"
 ```
 
-### Applying the verdict tag
+### Applying the readiness signal tag
 
-After posting all comments, add the verdict tag without replacing existing tags:
+After posting all comments, add the readiness signal tag without replacing existing tags:
 
 ```bash
 EXISTING_TAGS=$(curl -s -u ":${AZURE_DEVOPS_TOKEN}" \
   "https://dev.azure.com/${AZURE_ORG}/${AZURE_PROJECT}/_apis/wit/workitems/${WORK_ITEM_ID}?api-version=7.1&fields=System.Tags" \
   | python3 -c "import sys,json; print(json.load(sys.stdin).get('fields',{}).get('System.Tags',''))")
 
-NEW_TAGS="${EXISTING_TAGS}; ${VERDICT_TAG}"
+NEW_TAGS="${EXISTING_TAGS}; ${SIGNAL_TAG}"
 
 curl -s -u ":${AZURE_DEVOPS_TOKEN}" \
   -X PATCH \
@@ -148,7 +149,7 @@ print(json.dumps([
 ")"
 ```
 
-| Plugin verdict | Azure DevOps tag |
+| Plugin signal | Azure DevOps tag |
 |---|---|
 | `GROOMED` | `groomed` |
 | `NEEDS CLARIFICATION` | `needs-clarification` |
@@ -161,5 +162,5 @@ print(json.dumps([
 On completion:
 
 ```
-Elaboration posted on work item #<id>: <verdict> — <N> comments — <N> unresolved questions
+Elaboration posted on work item #<id>: <signal> — <N> comments — <N> open questions
 ```

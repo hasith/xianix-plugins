@@ -1,31 +1,31 @@
 ---
 name: analyze-requirement
-description: Groom a backlog item (GitHub Issue or Azure DevOps Work Item). Analyzes user intent, domain knowledge, competitive context, and workflow. Usage: /analyze-requirement [issue-number or work-item-id]
+description: Run the full requirement elaboration on a backlog item (GitHub Issue, Azure DevOps Work Item, or plain text). Acts as a thinking partner — surrounds the item with fit-with-existing-requirements, intent, domain & competitive context, user journey, persona & adoption, and open questions. Usage: /analyze-requirement [issue-number or work-item-id]
 argument-hint: [issue-number | work-item-id]
 ---
 
-Perform requirement grooming for item $ARGUMENTS.
+Elaborate item $ARGUMENTS as a thinking partner for the team — not as a gatekeeper.
 
-Use the **orchestrator** agent to run a full requirement elaboration. The orchestrator will:
+Use the **orchestrator** agent to run the full elaboration. The orchestrator will:
 
-1. Detect the hosting platform from `git remote get-url origin`
-2. Fetch item context (`gh` CLI for GitHub, `curl` REST API for Azure DevOps)
-3. Index repo documentation — scan for README, docs/, specs/, requirements/, and architecture files to build product and domain context
-4. Classify the item (story, task, bug, spike)
-5. Run five analysts in two phases (each receives the item content **and** the documentation summary):
+1. Detect the hosting platform from `git remote get-url origin` (or read `PLATFORM` / `REPO_URL` / `ISSUE_NUMBER` env vars in CI)
+2. Fetch item context (`gh` CLI for GitHub, `curl` REST API for Azure DevOps, prompt or local file for plain text)
+3. Index repo documentation — README, `docs/`, `specs/`, `requirements/`, `adr/`, `rfcs/`, PRDs, feature briefs, user stories — and reason about how this item **fits the existing requirements** (overlaps, dependencies, contradictions, gaps) at the **product level, not the code level**
+4. Classify the item (story, task, bug, spike) — used to tune the depth of analysis
+5. Run four analysts in parallel (each receives the item content, related items, **and** the documentation summary + Fit note):
 
-   **Phase 1 (parallel — context gathering):**
-   - **intent-analyst** — Intent decomposition, user context, workflow, decision points
-   - **domain-analyst** — Domain knowledge, data meaning, business rules, competitive insights (via web search)
-   - **journey-mapper** — End-to-end user journey across related issues, journey gaps, moments that matter
-   - **persona-analyst** — User types, needs mapping, persona conflicts, persona-specific edge cases
+   **Phase 1 — Context lenses (parallel):**
+   - **intent-analyst** — the "why" behind the ask, success definition, current workaround, decision points
+   - **domain-analyst** — domain knowledge, terminology, regulations, comparable products / competitors
+   - **journey-mapper** — upstream triggers, downstream consequences, **usability touchpoints, friction risks**
+   - **persona-analyst** — affected personas, persona conflicts, **adoption considerations** (onboarding, migration, change management, success signals)
 
-   **Phase 2 (after Phase 1):**
-   - **gap-risk-analyst** — Gaps, risks, value/priority, dependencies
+   **Phase 2 — Gap & Risk:**
+   - **gap-risk-analyst** — open questions, assumptions to validate, ACs to tighten, dependencies — **framed as prompts for the team, not blockers**
 
-6. Compile into a structured elaboration (see `styles/elaboration-template.md`)
-7. Post each analysis aspect as a **separate comment** on the issue/work item — the original body is never modified
+6. Compile into the structured elaboration (see `styles/elaboration-template.md`)
+7. Post each lens as a **separate comment** on the issue/work item — the original body is never modified — and apply a lightweight readiness signal label/tag as a triage hint
 
 If an issue/work item number is provided (e.g., `/analyze-requirement 42`), fetch the item details first.
 
-If no argument is given, prompt the user for an item number.
+If no argument is given, prompt the user for an item number or paste the requirement text.

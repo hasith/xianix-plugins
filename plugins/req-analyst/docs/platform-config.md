@@ -1,6 +1,6 @@
 # Platform Configuration
 
-The `req-analyst` plugin supports **GitHub** and **Azure DevOps** as backlog sources, auto-detecting the platform from `git remote get-url origin`.
+The `req-analyst` plugin supports **GitHub**, **Azure DevOps**, and **plain text** as backlog sources. The platform is auto-detected from `git remote get-url origin`, or set explicitly via the `PLATFORM` environment variable in CI.
 
 ---
 
@@ -56,8 +56,8 @@ You should see your account listed with the `repo` scope.
 |---|---|
 | `gh issue view` | Fetch issue details (title, body, labels, comments) |
 | `gh issue list` | Find related issues by milestone, label, or keyword |
-| `gh issue comment` | Post each analysis aspect as a comment |
-| `gh issue edit --add-label` | Apply verdict label |
+| `gh issue comment` | Post each elaboration lens as a comment |
+| `gh issue edit --add-label` | Apply readiness signal label |
 
 ---
 
@@ -84,8 +84,8 @@ export AZURE_DEVOPS_TOKEN=<your-pat>
 |---|---|
 | `GET _apis/wit/workitems/{id}` | Fetch work item details (title, description, tags, comments) |
 | `POST _apis/wit/wiql` | Query related work items in the same iteration |
-| `POST _apis/wit/workitems/{id}/comments?format=markdown` | Post each analysis aspect as a comment (Markdown rendered in the UI) |
-| `PATCH _apis/wit/workitems/{id}` | Apply verdict tag |
+| `POST _apis/wit/workitems/{id}/comments?format=markdown` | Post each elaboration lens as a comment (Markdown rendered in the UI) |
+| `PATCH _apis/wit/workitems/{id}` | Apply readiness signal tag |
 
 See `providers/azure-devops.md` for full API details.
 
@@ -98,10 +98,32 @@ curl -s -u ":${AZURE_DEVOPS_TOKEN}" \
 
 ---
 
+## Plain Text / Unknown Platform
+
+If the git remote does not match GitHub or Azure DevOps — or if there is no repo at all — the plugin runs in **generic** mode. The user can paste the requirement text or point at a local file, and the elaboration is written to `requirement-elaboration-report.md` in the working directory.
+
+No credentials are required.
+
+---
+
+## CI Environment Variables
+
+For CI pipelines or webhook-driven runs, these variables drive the plugin without interactive input:
+
+| Variable | Purpose |
+|---|---|
+| `PLATFORM` | `github` \| `azuredevops` \| `generic` — overrides remote-URL detection |
+| `REPO_URL` | Full HTTPS URL of the target repository |
+| `ISSUE_NUMBER` | Issue / work item ID to elaborate |
+| `GITHUB_TOKEN` | Required when `PLATFORM=github` |
+| `AZURE_DEVOPS_TOKEN` | Required when `PLATFORM=azuredevops` |
+
+---
+
 ## Summary
 
-| Platform | How items are fetched | How results are posted | Credentials |
+| Platform | How items are fetched | How elaboration is delivered | Credentials |
 |---|---|---|---|
-| GitHub | `gh` CLI | `gh issue comment` | `GITHUB_TOKEN` or `gh auth login` |
-| Azure DevOps | REST API (`curl`) | REST API (`curl`) | `AZURE_DEVOPS_TOKEN` env var |
-| Generic | User-provided or file | Written to `requirement-elaboration-report.md` | — |
+| GitHub | `gh` CLI | `gh issue comment` (one comment per lens) | `GITHUB_TOKEN` or `gh auth login` |
+| Azure DevOps | REST API (`curl`) | REST API `wit/comments?format=markdown` | `AZURE_DEVOPS_TOKEN` env var |
+| Generic / plain text | User-provided or local file | Written to `requirement-elaboration-report.md` | — |

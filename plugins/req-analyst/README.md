@@ -1,183 +1,229 @@
 # Requirement Analyst Plugin
 
-> Requirement grooming for backlog items. Analyzes **user intent**, **domain knowledge**, **competitive context**, and **workflow** — then posts a well-understood, groomed requirement to GitHub or Azure DevOps. Focused entirely on user experience; technical design is a separate activity.
+> An AI **thinking partner** for backlog refinement. Surrounds an issue or work item with the context a senior analyst would bring to a refinement session — fit with existing requirements, domain knowledge, competitive insight, user journeys, persona impact, usability and adoption considerations, and the open questions worth answering before any code is written.
 
-## What This Plugin Does
+The plugin's job is to **expand the team's thinking**, not to gate the work. A lightweight readiness signal (`GROOMED` / `NEEDS CLARIFICATION` / `NEEDS DECOMPOSITION`) is also applied as a label/tag, but it is a **triage hint** — the real value is in the elaboration itself.
 
-The **req-analyst** plugin grooms requirements by understanding *why* this exists, *what* success means to users, and *how* it fits the user journey. It scans the repo for existing documentation (README, specs, architecture docs) to build product context, then runs five analysts in two phases — each analyst receives both the issue content and the repo documentation summary. Results are posted as separate comments, preserving the original description.
-
-**Phase 1 — Context Gathering (parallel):**
-
-| Agent | Focus |
-| ----- | ----- |
-| **intent-analyst** | Intent decomposition, user context, workflow, decision points |
-| **domain-analyst** | Domain knowledge, data meaning, business rules, competitive insights |
-| **journey-mapper** | End-to-end user journey across related items, journey gaps, moments that matter |
-| **persona-analyst** | User types, needs mapping, persona conflicts, persona-specific edge cases |
-
-**Phase 2 — Gap & Risk Analysis:**
-
-| Agent | Focus |
-| ----- | ----- |
-| **gap-risk-analyst** | Gaps, risks, value/priority, dependencies |
-
-### Output
-
-- **Verdict:** `GROOMED` | `NEEDS CLARIFICATION` | `NEEDS DECOMPOSITION`
-- **Summary** with intent decomposition (stated need → underlying intent → success definition)
-- **User Context & Workflow** — who, when/where, constraints, before/during/after
-- **Domain Context** — data meaning, business rules, competitive insights
-- **Gaps & Unresolved Questions**
-- **Risks, Dependencies & Assumptions**
-- Automatic posting to the backlog platform
+Works with **GitHub Issues**, **Azure DevOps Work Items**, or **plain text input**.
 
 ---
 
-## Local Testing with Claude Code
+## What You Get Back
 
-Run the plugin interactively in your project using Claude Code (Claude CLI).
+Each run produces a structured elaboration posted directly on the backlog item — one comment per lens, the original description is never modified.
+
+- **Fit with existing requirements** — if the repo contains other requirement documents (PRDs, specs, RFCs, ADRs, feature briefs, user stories), the plugin reads them and reasons about how the new ask fits the existing product context: overlaps, dependencies, contradictions, and gaps. Product/requirements level — not code level.
+- **Intent & user context** — the underlying need, success definition, situational context, decision points.
+- **Domain & competitive context** — concepts, terminology, regulations, and how comparable products / open-source alternatives / competitors approach the same problem.
+- **User journey** — upstream triggers, downstream consequences, **usability touchpoints** (accessibility, discoverability, error states, empty states, "what happens when…"), and **friction risks**.
+- **Personas & adoption** — affected user types, where their goals diverge, persona-specific edge cases, and **adoption considerations** per persona (onboarding, migration, change management, documentation needs, success signals).
+- **Open questions & gaps** — assumptions worth validating and acceptance criteria worth tightening, framed as **prompts for the team** rather than blockers.
+
+---
+
+## How It Works
+
+```mermaid
+flowchart TD
+    A[Fetch backlog item] --> B[Index project docs & existing requirements]
+    B --> C[Reason about Fit with existing requirements]
+    C --> D[Classify item]
+    D --> E[Phase 1: 4 analysts in parallel]
+    E --> F[Phase 2: Gap & Risk]
+    F --> G[Compile elaboration & post one comment per lens]
+```
+
+1. **Fetch item** — `gh` CLI for GitHub, REST API for Azure DevOps, or paste/read a file for plain text.
+2. **Index project context** — scans READMEs, manifests, and any requirement documents in the repo (PRDs, specs, RFCs, ADRs, feature briefs, user stories under `/docs`, `/specs`, `/requirements`, `/adr`, `/rfcs`, etc.) to build a ~500-word project summary and a map of existing requirements. The new item is reasoned about *against* that map — overlaps, dependencies, contradictions, gaps — at the **product level**, not the code level.
+3. **Classify** — type (story / task / bug / spike), domain, complexity — used to tune depth.
+4. **Phase 1 (parallel)** — four analysts contribute different lenses simultaneously:
+   - **Intent** — surfaces the underlying user need and the "why" behind the ask.
+   - **Domain** — brings domain knowledge, industry conventions, and how competitors / comparable products handle the same problem.
+   - **Journey** — maps the user workflow around this requirement, including usability touchpoints and friction risks.
+   - **Persona** — identifies affected user personas and adoption considerations specific to each.
+5. **Phase 2** — a **Gap & Risk** analyst reviews Phase 1 output to surface missing acceptance criteria, edge cases, and risks as **discussion prompts**.
+6. **Compile & post** — findings are posted as ordered comments on the item, ready for the team to react to in the next refinement.
+
+For unsupported platforms, the output is written to `requirement-elaboration-report.md`.
+
+---
+
+## Quick Start
 
 ### Prerequisites
 
 - [Claude Code](https://docs.anthropic.com/claude-code) installed (`claude` CLI)
 - **GitHub**: `gh` CLI installed and authenticated (`gh auth login`) — or `GITHUB_TOKEN` env var
 - **Azure DevOps**: `AZURE_DEVOPS_TOKEN` PAT with `Work Items (Read & Write)` scope
-- Working directory: your project repo or a clone of the target repo
+- **Plain text**: nothing — the report is written to disk
 
-### 1. Point Claude Code at the plugin
-
-Launch with the plugin directory:
+### Run
 
 ```bash
-claude --plugin-dir /path/to/xianix-team/plugins/req-analyst
+# Point Claude Code at the plugin
+claude --plugin-dir /path/to/xianix-plugins-official/plugins/req-analyst
+
+# Then in the chat
+/requirement-analysis 42
 ```
 
-> Replace `/path/to/xianix-team` with the actual path — e.g. if you cloned xianix-team to `~/xianix-team`, use `~/xianix-team/plugins/req-analyst`.
+See [docs/platform-config.md](docs/platform-config.md) for full credential setup and [docs/backlog-setup.md](docs/backlog-setup.md) for how to structure backlog items.
 
-### 2. Configure credentials
+---
 
-**GitHub:**
-
-```bash
-gh auth login
-# or
-export GITHUB_TOKEN=ghp_your_token_here
-```
-
-**Azure DevOps:**
-
-```bash
-export AZURE_DEVOPS_TOKEN=<your-pat>
-```
-
-See [docs/platform-config.md](docs/platform-config.md) for full details.
-
-### 3. Run from your project repo
-
-`cd` into your **project repository** (the one whose backlog you want to elaborate), then start Claude:
-
-```bash
-cd /path/to/your-project
-claude --plugin-dir /path/to/xianix-team/plugins/req-analyst
-```
-
-### 4. Invoke the command
-
-In the Claude chat:
+## Sample Prompt
 
 ```text
 /requirement-analysis 42
 ```
 
-Elaborate issue #42. The agent will fetch the issue, scan repo documentation for context, run all five analysts, and post each analysis aspect as a separate comment on the issue — the original issue body is never modified.
+---
 
-### Optional: Test without posting
+## Inputs
 
-To inspect the output without posting to GitHub, you can ask Claude to run the analysis and show you the elaboration before posting — the command is designed to post automatically, but you can experiment with custom prompts in a separate chat to see the structure.
+| Input | Source | Required | Description |
+|---|---|---|---|
+| Repository URL | Agent rule | Yes | The repository containing the backlog item — provided by the Xianix Agent rule, not typed in the prompt |
+| Issue / Work-item number | Prompt | Yes | The backlog item to elaborate (e.g. `42`) |
+
+The platform (GitHub, Azure DevOps, etc.) is **auto-detected** from `git remote` — you don't need to specify it.
 
 ---
 
-## Central Run with `run-requirement-analysis.sh`
+## Environment Variables
 
-The script `scripts/run-requirement-analysis.sh` is designed for **server/CI** runs: it clones the target repo into an isolated worktree, sets up credentials, runs the analysis, and cleans up. Use it when requirements analysis is triggered centrally (e.g. by a webhook or scheduler).
+| Variable | Platform | Required | Purpose |
+|---|---|---|---|
+| `GITHUB_TOKEN` | GitHub | Yes | Authenticate `gh` CLI for reading issues and posting comments |
+| `AZURE_DEVOPS_TOKEN` | Azure DevOps | Yes | PAT for REST API calls (read work items, post comments) |
 
-### Prerequisites (central run)
+For CI pipelines, you can also set `PLATFORM`, `REPO_URL`, and `ISSUE_NUMBER` to drive the plugin without interactive input.
 
-- `git`, `claude` CLI, and `gh` CLI installed
-- Environment variables set for the target platform (see below)
+---
 
-### Required Environment Variables
+## Output Layout
 
-#### GitHub
+The plugin posts one comment per lens, in this order, preserving the original description:
 
-| Variable | Description |
-| -------- | ----------- |
-| `PLATFORM` | `github` |
-| `REPO_URL` | Full HTTPS clone URL, e.g. `https://github.com/org/repo.git` |
-| `ISSUE_NUMBER` | GitHub issue number to elaborate |
-| `GITHUB_TOKEN` | PAT with `repo` scope (used for `gh` CLI and git clone) |
+1. **📋 Elaboration Summary** — overview, readiness signal, key takeaways
+2. **🧩 Fit with Existing Requirements** — overlaps / dependencies / contradictions / gaps with PRDs, specs, ADRs, feature briefs already in the repo
+3. **🔍 Intent & User Context** — underlying need, situational context, decision points
+4. **🗺️ User Journey** — upstream/downstream, usability touchpoints, friction risks
+5. **👥 Personas & Adoption** — affected personas, conflicts, adoption per persona
+6. **🏢 Domain & Competitive Context** — concepts, terminology, regulations, comparable products
+7. **❓ Open Questions & Gaps** — prompts for the next refinement
 
-#### Azure DevOps
+A lightweight signal label/tag is also applied:
 
-| Variable | Description |
-| -------- | ----------- |
-| `PLATFORM` | `azure-devops` |
-| `REPO_URL` | Full HTTPS clone URL, e.g. `https://dev.azure.com/org/project/_git/repo` |
-| `ISSUE_NUMBER` | Work Item ID to elaborate |
-| `AZURE_DEVOPS_TOKEN` | PAT with Work Items (Read & Write) scopes |
-| `GIT_TOKEN` | PAT for git clone (often same as `AZURE_DEVOPS_TOKEN`) |
+| Signal | Meaning |
+|---|---|
+| `groomed` | Intent clear; no critical open questions |
+| `needs-clarification` | Worth a short conversation before pickup |
+| `needs-decomposition` | Likely too large — the elaboration suggests how it might split |
 
-### Usage
+Sections with no real findings are **skipped**, never filled with "None identified."
 
-Run from the **xianix-team** repo root:
+---
 
-```bash
-# GitHub
-PLATFORM=github \
-REPO_URL=https://github.com/org/repo.git \
-ISSUE_NUMBER=42 \
-GITHUB_TOKEN=ghp_xxx \
-./scripts/run-requirement-analysis.sh
+## Rule Examples (Tag-Driven Triggering)
+
+Add one (or both) of the execution blocks below to your `rules.json` so the Xianix Agent automatically elaborates backlog items when a webhook fires.
+
+### When does the agent trigger?
+
+The Requirement Analyst is **tag-driven**. It runs when the `ai-dlc/issue/analyze` label (GitHub) or tag (Azure DevOps) is present on an issue / work item and one of the following happens (OR logic across `match-any` entries):
+
+| Scenario | What it covers |
+|---|---|
+| Tag newly applied | A human (or another rule) adds `ai-dlc/issue/analyze` to an existing issue or work item |
+| Issue / work item created with the tag already present | The item is opened with the tag included from the start |
+
+There is no assignee-based trigger. The label or tag is the single source of truth for "elaborate this backlog item."
+
+| Platform | Scenario | Webhook event | Filter rule |
+|---|---|---|---|
+| GitHub | Tag newly applied | `issues` | `action==labeled` and the just-added `label.name=='ai-dlc/issue/analyze'` |
+| GitHub | Issue opened with tag | `issues` | `action==opened` and `ai-dlc/issue/analyze` is in `issue.labels` |
+| Azure DevOps | Tag newly applied | `workitem.updated` | `ai-dlc/issue/analyze` appears in the new `resource.revision.fields["System.Tags"]` value but not in `resource.fields["System.Tags"].oldValue` |
+| Azure DevOps | Work item created with tag | `workitem.created` | `ai-dlc/issue/analyze` is in `resource.fields["System.Tags"]` |
+
+### GitHub
+
+```json
+{
+  "name": "github-issue-requirement-analysis",
+  "match-any": [
+    {
+      "name": "github-issue-tag-applied",
+      "rule": "action==labeled&&label.name=='ai-dlc/issue/analyze'"
+    },
+    {
+      "name": "github-issue-opened-with-tag",
+      "rule": "action==opened&&issue.labels.*.name=='ai-dlc/issue/analyze'"
+    }
+  ],
+  "use-inputs": [
+    { "name": "issue-number",    "value": "issue.number" },
+    { "name": "repository-url",  "value": "repository.clone_url" },
+    { "name": "repository-name", "value": "repository.full_name" },
+    { "name": "issue-title",     "value": "issue.title" },
+    { "name": "platform",        "value": "github", "constant": true }
+  ],
+  "use-plugins": [
+    {
+      "plugin-name": "req-analyst@xianix-plugins-official",
+      "marketplace": "xianix-team/plugins-official"
+    }
+  ],
+  "execute-prompt": "Issue #{{issue-number}} titled \"{{issue-title}}\" in the repository {{repository-name}} has been tagged with `ai-dlc/issue/analyze` for requirement analysis.\n\nRun /requirement-analysis {{issue-number}} to perform the automated requirement analysis and elaboration."
+}
 ```
 
-```bash
-# Azure DevOps
-PLATFORM=azure-devops \
-REPO_URL=https://dev.azure.com/org/project/_git/repo \
-ISSUE_NUMBER=123 \
-AZURE_DEVOPS_TOKEN=pat_xxx \
-GIT_TOKEN=pat_xxx \
-./scripts/run-requirement-analysis.sh
+### Azure DevOps
+
+```json
+{
+  "name": "azuredevops-work-item-requirement-analysis",
+  "match-any": [
+    {
+      "name": "azuredevops-workitem-tag-applied",
+      "rule": "eventType==workitem.updated&&resource.revision.fields.\"System.Tags\"*='ai-dlc/issue/analyze'&&resource.fields.\"System.Tags\".oldValue!*='ai-dlc/issue/analyze'"
+    },
+    {
+      "name": "azuredevops-workitem-created-with-tag",
+      "rule": "eventType==workitem.created&&resource.fields.\"System.Tags\"*='ai-dlc/issue/analyze'"
+    }
+  ],
+  "use-inputs": [
+    { "name": "workitem-id",     "value": "resource.workItemId" },
+    { "name": "workitem-title",  "value": "resource.revision.fields.\"System.Title\"" },
+    { "name": "workitem-type",   "value": "resource.revision.fields.\"System.WorkItemType\"" },
+    { "name": "project-name",    "value": "resource.revision.fields.\"System.TeamProject\"" },
+    { "name": "repository-url",  "value": "https://org@dev.azure.com/org/Project/_git/Repo", "constant": true },
+    { "name": "platform",        "value": "azuredevops", "constant": true }
+  ],
+  "use-plugins": [
+    {
+      "plugin-name": "req-analyst@xianix-plugins-official",
+      "marketplace": "xianix-team/plugins-official"
+    }
+  ],
+  "execute-prompt": "Work item ({{workitem-type}}) #{{workitem-id}} titled \"{{workitem-title}}\" in project {{project-name}} has been tagged with `ai-dlc/issue/analyze` for requirement analysis.\n\nRun /requirement-analysis {{workitem-id}} to perform the automated requirement analysis and elaboration."
+}
 ```
 
-### What the Script Does
-
-1. Creates or updates a shared **bare clone** of the target repo (`REPO_CACHE_DIR`)
-2. Creates an isolated **per-run worktree** (`WORKDIR`)
-3. Sets up credentials (env vars for `gh` CLI and `curl`)
-4. Clones/updates **xianix-team** and loads the req-analyst plugin
-5. Runs `claude -p "/analyze-requirement <ISSUE_NUMBER>"` inside the worktree
-6. Removes the worktree after the run (unless `KEEP_WORKDIR=1`)
-
-### Optional Variables
-
-| Variable | Default | Description |
-| -------- | ------- | ----------- |
-| `XIANIX_REPO` | `https://github.com/99x/xianix-team.git` | Override plugin source repo |
-| `XIANIX_CACHE_DIR` | `/tmp/requirement-analysis-cache/xianix-team` | Path for cloned xianix-team |
-| `XIANIX_USE_LOCAL` | `0` | Set to `1` to use XIANIX_CACHE_DIR as-is (no clone/pull) — for local dev |
-| `REPO_CACHE_DIR` | `/tmp/requirement-analysis-cache/<repo-slug>` | Path for bare clone |
-| `WORKDIR` | `/tmp/requirement-analysis-<ISSUE>-<timestamp>` | Per-run worktree |
-| `KEEP_WORKDIR` | `0` | Set to `1` to preserve worktree after run (debugging) |
+> These blocks go inside the `executions` array of a rule set. See your Xianix Agent rules-configuration documentation for the full file structure and filter syntax.
 
 ---
 
 ## Documentation
 
 | Document | Description |
-| -------- | ----------- |
-| [docs/platform-config.md](docs/platform-config.md) | Platform configuration — GitHub CLI, Azure DevOps PAT |
-| [docs/backlog-setup.md](docs/backlog-setup.md) | Backlog structure, labels/tags, and workflow for both platforms |
+|---|---|
+| [docs/platform-config.md](docs/platform-config.md) | Platform configuration — GitHub CLI, Azure DevOps PAT, CI env vars |
+| [docs/backlog-setup.md](docs/backlog-setup.md) | Backlog structure, tag-driven triggering, readiness signals |
 | [providers/github.md](providers/github.md) | GitHub-specific fetching and posting |
 | [providers/azure-devops.md](providers/azure-devops.md) | Azure DevOps-specific fetching and posting |
-| [providers/generic.md](providers/generic.md) | Fallback — file-based output |
+| [providers/generic.md](providers/generic.md) | Plain text / unknown platform — file-based output |
+| [styles/elaboration.md](styles/elaboration.md) | Tone & section order |
+| [styles/elaboration-template.md](styles/elaboration-template.md) | Compiled elaboration template |

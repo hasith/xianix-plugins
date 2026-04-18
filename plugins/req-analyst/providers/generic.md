@@ -1,22 +1,26 @@
-# Provider: Generic / Unknown Platform
+# Provider: Generic / Plain Text
 
-Use this provider when the git remote does not match GitHub or Azure DevOps — or as a fallback when API posting is not possible.
+Use this provider when:
+
+- The git remote does not match GitHub or Azure DevOps
+- The user supplies the requirement as plain text (no remote at all)
+- API posting is otherwise not possible
 
 ## Behaviour
 
-In generic mode the elaboration is **not posted to a remote platform**. Instead, each analysis aspect is written to a local file as separate sections so it can be consumed by an external process, CI system, or human operator.
+In generic mode the elaboration is **not posted to a remote platform**. Instead, each lens is written to a local file as a separate section so it can be consumed by an external process, CI system, or human operator.
 
 ---
 
 ## Writing the Report File
 
-Write the full compiled elaboration to a file in the repository root:
+Write the full compiled elaboration to a file in the repository root (or current working directory if there is no repo):
 
 ```
 requirement-elaboration-report.md
 ```
 
-The file must be written even if the verdict is `GROOMED` — the file serves as the audit artifact.
+The file must be written even if the readiness signal is `GROOMED` — it serves as the audit artifact.
 
 **File format:**
 
@@ -24,14 +28,19 @@ The file must be written even if the verdict is `GROOMED` — the file serves as
 # Requirement Elaboration Report
 
 Generated: <ISO 8601 timestamp>
-Repository: <repo URL>
-Issue: #<issue number>
-Verdict: GROOMED | NEEDS CLARIFICATION | NEEDS DECOMPOSITION
+Source: <repo URL or "plain text input">
+Item: #<issue number or short title>
+Readiness signal: GROOMED | NEEDS CLARIFICATION | NEEDS DECOMPOSITION
 
 ---
 
 ## 📋 Elaboration Summary
 <summary and intent decomposition>
+
+---
+
+## 🧩 Fit with Existing Requirements
+<orchestrator's fit note — omit if no requirement docs in the repo>
 
 ---
 
@@ -45,18 +54,18 @@ Verdict: GROOMED | NEEDS CLARIFICATION | NEEDS DECOMPOSITION
 
 ---
 
-## 👥 Personas
-<persona-analyst output — omit if single persona>
+## 👥 Personas & Adoption
+<persona-analyst output — omit if single persona and adoption is trivial>
 
 ---
 
-## 🏢 Domain Context
+## 🏢 Domain & Competitive Context
 <domain-analyst output>
 
 ---
 
-## ⚠️ Gaps, Risks & Dependencies
-<gap-risk-analyst output>
+## ❓ Open Questions & Gaps
+<gap-risk-analyst output — framed as prompts for the team>
 ```
 
 ---
@@ -66,7 +75,7 @@ Verdict: GROOMED | NEEDS CLARIFICATION | NEEDS DECOMPOSITION
 On completion:
 
 ```
-Elaboration complete: <verdict> — report written to requirement-elaboration-report.md
+Elaboration complete: <signal> — report written to requirement-elaboration-report.md
 ```
 
 ---
@@ -75,6 +84,7 @@ Elaboration complete: <verdict> — report written to requirement-elaboration-re
 
 This provider is the correct fallback for:
 
+- **Plain text input** — the user pastes a requirement and wants the elaboration in a file
 - Azure Boards (when REST API posting is not configured)
 - Jira instances (API posting not yet implemented — use generic)
 - Self-hosted issue trackers

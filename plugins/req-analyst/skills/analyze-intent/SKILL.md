@@ -1,11 +1,11 @@
 ---
 name: analyze-intent
-description: Run a focused intent and user-context analysis on a backlog item. Decomposes stated need into underlying intent, success definition, user context, and workflow. Works with GitHub Issues and Azure DevOps Work Items. Usage: /analyze-intent [issue-number or work-item-id]
+description: Run a focused intent and user-context analysis on a backlog item. Surfaces the underlying user need, success definition, situational context, and the workflow this change participates in. Works with GitHub Issues and Azure DevOps Work Items. Usage: /analyze-intent [issue-number or work-item-id]
 argument-hint: [issue-number | work-item-id]
 disable-model-invocation: true
 ---
 
-Run a focused intent analysis on item #$ARGUMENTS.
+Run a focused intent analysis on item #$ARGUMENTS. Output is a thinking-partner observation for the team — not a gating verdict.
 
 ## Steps
 
@@ -16,7 +16,7 @@ Run a focused intent analysis on item #$ARGUMENTS.
    - **Azure DevOps:** Use `curl` to fetch the work item — see `providers/azure-devops.md`.
 
 3. Scan the repo for relevant documentation:
-   - Look for `README.md`, `docs/**/*.md`, `requirements/**/*`, `specs/**/*`
+   - Look for `README.md`, `docs/**/*.md`, `requirements/**/*`, `specs/**/*`, `adr/**/*`, `rfcs/**/*`
    - Read files that reference key terms from the item title/body
    - Build a short documentation summary for context
 

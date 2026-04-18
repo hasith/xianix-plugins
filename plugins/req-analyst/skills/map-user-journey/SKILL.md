@@ -1,11 +1,11 @@
 ---
 name: map-user-journey
-description: Map the full end-to-end user journey for a backlog item. Shows where the requirement fits in the broader user flow, identifies journey gaps, and surfaces moments that matter. Works with GitHub Issues and Azure DevOps Work Items. Usage: /map-user-journey [issue-number or work-item-id]
+description: Map the end-to-end user journey for a backlog item. Places the requirement in the broader workflow, surfaces upstream triggers and downstream consequences, usability touchpoints, friction risks, and journey gaps. Works with GitHub Issues and Azure DevOps Work Items. Usage: /map-user-journey [issue-number or work-item-id]
 argument-hint: [issue-number | work-item-id]
 disable-model-invocation: true
 ---
 
-Map the full user journey for item #$ARGUMENTS.
+Map the user journey for item #$ARGUMENTS. Output is observation for the team, not a gating verdict.
 
 ## Steps
 
@@ -24,7 +24,7 @@ Map the full user journey for item #$ARGUMENTS.
    - Read files that describe user flows, features, or journeys
    - Build a short documentation summary for context
 
-5. Use the **journey-mapper** agent, passing it the item content, related items, **and** the documentation summary.
+5. Use the **journey-mapper** agent, passing it the item content, related items, **and** the documentation summary. The agent will surface upstream/downstream context, usability touchpoints, friction risks, and journey gaps.
 
 6. Output the journey map directly. Do not post to any platform — this is a local-only analysis.
 

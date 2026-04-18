@@ -1,11 +1,11 @@
 ---
 name: analyze-gaps
-description: Run a focused gap, risk, and value analysis on a backlog item. Identifies ambiguities, failure modes, value/priority, and dependencies. Works with GitHub Issues and Azure DevOps Work Items. Usage: /analyze-gaps [issue-number or work-item-id]
+description: Surface open questions, assumptions worth validating, edge cases, and dependencies for a backlog item. Frames findings as discussion prompts for the next refinement, not as work blockers. Works with GitHub Issues and Azure DevOps Work Items. Usage: /analyze-gaps [issue-number or work-item-id]
 argument-hint: [issue-number | work-item-id]
 disable-model-invocation: true
 ---
 
-Run a focused gap and risk analysis on item #$ARGUMENTS.
+Surface open questions and gaps on item #$ARGUMENTS. Output is prompts for the team — not gating issues.
 
 ## Steps
 
@@ -16,12 +16,12 @@ Run a focused gap and risk analysis on item #$ARGUMENTS.
    - **Azure DevOps:** Use `curl` to fetch the work item — see `providers/azure-devops.md`.
 
 3. Scan the repo for relevant documentation:
-   - Look for `README.md`, `docs/**/*.md`, `requirements/**/*`, `specs/**/*`
-   - Read files that reference key terms from the item
+   - Look for `README.md`, `docs/**/*.md`, `requirements/**/*`, `specs/**/*`, `adr/**/*`, `rfcs/**/*`
+   - Read files that reference key terms from the item — and any existing requirement documents in the area
    - Build a short documentation summary for context
 
 4. Use the **gap-risk-analyst** agent, passing it the item title, body, labels/tags, comments, **and** the documentation summary.
 
-5. Output the gap/risk analysis findings directly. Do not post to any platform — this is a local-only analysis.
+5. Output the open-questions analysis directly. Do not post to any platform — this is a local-only analysis.
 
 If no argument is given, prompt the user for an item number.

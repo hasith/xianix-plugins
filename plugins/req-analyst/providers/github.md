@@ -57,22 +57,23 @@ gh issue list --search "${KEYWORD}" --json number,title,state --limit 10
 
 ## Posting the Elaboration
 
-The original issue body is **never modified**. All analysis is posted as **separate comments** — one per aspect. This preserves the author's description and creates a reviewable discussion thread.
+The original issue body is **never modified**. All elaboration is posted as **separate comments** — one per lens. This preserves the author's description and creates a reviewable discussion thread.
 
 ### Comment Order
 
-Post each aspect as its own comment using `gh issue comment`. Each comment must have a clear heading so the thread is scannable.
+Post each lens as its own comment using `gh issue comment`. Each comment must have a clear heading so the thread is scannable.
 
 | # | Comment | Heading | Source |
 |---|---------|---------|--------|
-| 1 | Summary & Verdict | `## 📋 Elaboration Summary` | Orchestrator (compiled) |
-| 2 | Intent & User Context | `## 🔍 Intent & User Context` | intent-analyst |
-| 3 | User Journey | `## 🗺️ User Journey` | journey-mapper |
-| 4 | Personas | `## 👥 Personas` | persona-analyst |
-| 5 | Domain Context | `## 🏢 Domain Context` | domain-analyst |
-| 6 | Gaps, Risks & Dependencies | `## ⚠️ Gaps, Risks & Dependencies` | gap-risk-analyst |
+| 1 | Elaboration Summary | `## 📋 Elaboration Summary` | Orchestrator (compiled) |
+| 2 | Fit with Existing Requirements | `## 🧩 Fit with Existing Requirements` | Orchestrator (from doc indexing in Step 2) |
+| 3 | Intent & User Context | `## 🔍 Intent & User Context` | intent-analyst |
+| 4 | User Journey | `## 🗺️ User Journey` | journey-mapper |
+| 5 | Personas & Adoption | `## 👥 Personas & Adoption` | persona-analyst |
+| 6 | Domain & Competitive Context | `## 🏢 Domain & Competitive Context` | domain-analyst |
+| 7 | Open Questions & Gaps | `## ❓ Open Questions & Gaps` | gap-risk-analyst |
 
-**Skip** comments 3 (Journey) and 4 (Personas) if the sub-agent found nothing relevant (e.g., a narrow bug fix with a single obvious persona).
+**Skip** any comment whose source produced no meaningful findings (e.g. a narrow bug fix may not need Journey, Personas, or Fit).
 
 ### Posting each comment
 
@@ -93,15 +94,15 @@ EOF
 
 ---
 
-## Applying the Verdict Label
+## Applying the Readiness Signal
 
-After posting all comments, apply the verdict label:
+After posting all comments, apply the readiness label as a **triage hint**:
 
 ```bash
-gh issue edit ${ISSUE_NUMBER} --add-label "${VERDICT_LABEL}"
+gh issue edit ${ISSUE_NUMBER} --add-label "${SIGNAL_LABEL}"
 ```
 
-| Plugin verdict | GitHub label |
+| Plugin signal | GitHub label |
 |---|---|
 | `GROOMED` | `groomed` |
 | `NEEDS CLARIFICATION` | `needs-clarification` |
@@ -109,12 +110,12 @@ gh issue edit ${ISSUE_NUMBER} --add-label "${VERDICT_LABEL}"
 
 ---
 
-## Posting Unresolved Questions
+## Posting Open Questions
 
-If the gap-risk-analyst identified unresolved questions, post each as a **separate comment** after the analysis comments, tagging the relevant person:
+If the gap-risk-analyst identified open questions, post each as a **separate comment** after the elaboration comments, tagging the relevant person and framed as a prompt:
 
 ```bash
-gh issue comment ${ISSUE_NUMBER} --body "❓ **Unresolved Question**
+gh issue comment ${ISSUE_NUMBER} --body "❓ **Open question for refinement**
 
 ${QUESTION_TEXT} — @${PERSON}"
 ```
@@ -141,5 +142,5 @@ git remote get-url origin
 On completion:
 
 ```
-Elaboration posted on issue #<number>: <verdict> — <N> comments — <N> unresolved questions
+Elaboration posted on issue #<number>: <signal> — <N> comments — <N> open questions
 ```
